@@ -23,8 +23,6 @@ set(GameSources
 
 # Dependencies
 set(SDL3_DIR "vendor/SDL-3.2.20")
-add_subdirectory(${SDL3_DIR})
-include_directories(${SDL3_DIR}/include)
 
 set(IMGUI_DIR "vendor/imgui-1.92.2b-docking")
 set(ImGuiSources
@@ -34,14 +32,20 @@ set(ImGuiSources
     ${IMGUI_DIR}/imgui_widgets.cpp
     ${IMGUI_DIR}/backends/imgui_impl_sdl3.cpp
 )
-include_directories(${IMGUI_DIR}  ${IMGUI_DIR}/backends)
 
+# Actual Executables
 add_executable(GameClient "src/client_main.cpp" ${GameSources} ${ImGuiSources})
 add_executable(GameServer "src/server_main.cpp" ${GameSources})
-add_executable(GameTests "src/test.cpp" ${GameSources})
+add_executable(GameTests "src/test.cpp" ${GameSources} ${ImGuiSources})
+
+# Include / Link
+add_subdirectory(${SDL3_DIR})
+
+target_include_directories(GameClient PRIVATE ${IMGUI_DIR} ${IMGUI_DIR}/backends)
+target_include_directories(GameTests PRIVATE ${IMGUI_DIR} ${IMGUI_DIR}/backends)
 
 target_link_libraries(GameClient PRIVATE SDL3::SDL3)
-target_link_libraries(GameServer PRIVATE SDL3::SDL3) # Server maybe not need?
+# target_link_libraries(GameServer PRIVATE SDL3::SDL3)
 target_link_libraries(GameTests PRIVATE SDL3::SDL3)
 
 # Ensure all warnings are caught
