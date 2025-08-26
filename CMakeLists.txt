@@ -33,6 +33,7 @@ set(ImGuiSources
     ${IMGUI_DIR}/imgui_tables.cpp
     ${IMGUI_DIR}/imgui_widgets.cpp
     ${IMGUI_DIR}/backends/imgui_impl_sdl3.cpp
+    ${IMGUI_DIR}/backends/imgui_impl_vulkan.cpp
 )
 
 # Actual Executables
@@ -44,15 +45,16 @@ add_executable(GameTests "src/test.cpp" ${GameSources} ${ImGuiSources})
 add_subdirectory(${SDL3_DIR})
 add_subdirectory(${GLM_DIR})
 
-target_include_directories(GameClient PRIVATE ${IMGUI_DIR} ${IMGUI_DIR}/backends)
-target_include_directories(GameTests PRIVATE ${IMGUI_DIR} ${IMGUI_DIR}/backends)
-
-target_link_libraries(GameClient PRIVATE SDL3::SDL3)
-target_link_libraries(GameTests PRIVATE SDL3::SDL3)
-
 target_link_libraries(GameClient PRIVATE glm::glm)
 target_link_libraries(GameServer PRIVATE glm::glm)
 target_link_libraries(GameTests PRIVATE glm::glm)
+
+# Client Only Include / Link
+target_link_libraries(GameClient PRIVATE SDL3::SDL3)
+target_link_libraries(GameTests PRIVATE SDL3::SDL3)
+
+target_include_directories(GameClient PRIVATE ${IMGUI_DIR} ${IMGUI_DIR}/backends)
+target_include_directories(GameTests PRIVATE ${IMGUI_DIR} ${IMGUI_DIR}/backends)
 
 target_include_directories(GameClient PRIVATE ${Vulkan_INCLUDE_DIRS})
 target_include_directories(GameTests PRIVATE ${Vulkan_INCLUDE_DIRS})
