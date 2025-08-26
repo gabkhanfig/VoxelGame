@@ -1,3 +1,6 @@
 [submodule "vendor/SDL-3.2.20"]
 	path = vendor/SDL-3.2.20
 	url = https://github.com/libsdl-org/SDL.git
+[submodule "vendor/imgui-1.92.2b-docking"]
+	path = vendor/imgui-1.92.2b-docking
+	url = https://github.com/ocornut/imgui.git
