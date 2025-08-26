@@ -1,0 +1,9 @@
+# CMake
+build/
+CMakeUserPresets.json
+compile_commands.json
+.cache/
+# Visual Studio
+.vs/
+# Neovim
+out/
