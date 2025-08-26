@@ -18,8 +18,13 @@ set(GameSources
 
 )
 
-add_executable(Game "src/main.cpp" ${GameSources})
+add_executable(GameClient "src/client_main.cpp" ${GameSources})
+add_executable(GameServer "src/server_main.cpp" ${GameSources})
 add_executable(GameTests "src/test.cpp" ${GameSources})
+
+# Dependencies
+set(SDL3_DIR "vendor/SDL-3.2.20")
+add_subdirectory(${SDL3_DIR})
 
 # Ensure all warnings are caught
 if(MSVC)
@@ -47,11 +52,11 @@ if(X86)
     cmake_host_system_information(RESULT HAS_SSE2 QUERY HAS_SSE2)
     if(HAS_SSE2)
         if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
-            message(STATUS "Sync SSE2 GNU/Clang")
+            message(STATUS "Game SSE2 GNU/Clang")
             set(CMAKE_CXX_FLAGS "-msse2")
             add_compile_options(-msse2)
         elseif(CMAKE_C_COMPILER_ID MATCHES "MSVC")
-            message(STATUS "Sync SSE2 MSVC")
+            message(STATUS "Game SSE2 MSVC")
             set(CMAKE_CXX_FLAGS "/arch:SSE2")
             add_compile_options(/arch:SSE2)
             # For some reason __SSE2__ macro doesn't seem to work? Not sure why?
@@ -60,11 +65,11 @@ if(X86)
 
     # AVX2
     if(MSVC)
-        message(STATUS "Sync AVX2 MSVC")
+        message(STATUS "Game AVX2 MSVC")
         set(CMAKE_CXX_FLAGS "/arch:AVX2")
         add_compile_options(/arch:AVX2)
     else()
-        message(STATUS "Sync AVX2 GNU/Clang")
+        message(STATUS "Game AVX2 GNU/Clang")
         set(CMAKE_CXX_FLAGS "-mavx2")
         add_compile_options(-mavx2)
     endif()

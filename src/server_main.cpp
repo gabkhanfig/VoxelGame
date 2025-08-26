@@ -1,5 +1,5 @@
 #include <iostream>
 
 int main() {
-    std::cout << "hello main\n";
+    std::cout << "hello server\n";
 }
