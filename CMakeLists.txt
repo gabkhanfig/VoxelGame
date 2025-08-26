@@ -23,8 +23,9 @@ set(GameSources
 
 # Dependencies
 set(SDL3_DIR "vendor/SDL-3.2.20")
-
 set(IMGUI_DIR "vendor/imgui-1.92.2b-docking")
+set(GLM_DIR "vendor/GLM-1.0.1")
+
 set(ImGuiSources
     ${IMGUI_DIR}/imgui.cpp
     ${IMGUI_DIR}/imgui_draw.cpp
@@ -40,13 +41,17 @@ add_executable(GameTests "src/test.cpp" ${GameSources} ${ImGuiSources})
 
 # Include / Link
 add_subdirectory(${SDL3_DIR})
+add_subdirectory(${GLM_DIR})
 
 target_include_directories(GameClient PRIVATE ${IMGUI_DIR} ${IMGUI_DIR}/backends)
 target_include_directories(GameTests PRIVATE ${IMGUI_DIR} ${IMGUI_DIR}/backends)
 
 target_link_libraries(GameClient PRIVATE SDL3::SDL3)
-# target_link_libraries(GameServer PRIVATE SDL3::SDL3)
 target_link_libraries(GameTests PRIVATE SDL3::SDL3)
+
+target_link_libraries(GameClient PRIVATE glm::glm)
+target_link_libraries(GameServer PRIVATE glm::glm)
+target_link_libraries(GameTests PRIVATE glm::glm)
 
 # Ensure all warnings are caught
 if(MSVC)
