@@ -13,18 +13,36 @@ project("VoxelGame")
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+# This makes sure that the dynamic library goes into the build directory automatically.
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/$<CONFIGURATION>")
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/$<CONFIGURATION>")
 
 set(GameSources
 
 )
 
-add_executable(GameClient "src/client_main.cpp" ${GameSources})
-add_executable(GameServer "src/server_main.cpp" ${GameSources})
-add_executable(GameTests "src/test.cpp" ${GameSources})
-
 # Dependencies
 set(SDL3_DIR "vendor/SDL-3.2.20")
 add_subdirectory(${SDL3_DIR})
+include_directories(${SDL3_DIR}/include)
+
+set(IMGUI_DIR "vendor/imgui-1.92.2b-docking")
+set(ImGuiSources
+    ${IMGUI_DIR}/imgui.cpp
+    ${IMGUI_DIR}/imgui_draw.cpp
+    ${IMGUI_DIR}/imgui_tables.cpp
+    ${IMGUI_DIR}/imgui_widgets.cpp
+    ${IMGUI_DIR}/backends/imgui_impl_sdl3.cpp
+)
+include_directories(${IMGUI_DIR}  ${IMGUI_DIR}/backends)
+
+add_executable(GameClient "src/client_main.cpp" ${GameSources} ${ImGuiSources})
+add_executable(GameServer "src/server_main.cpp" ${GameSources})
+add_executable(GameTests "src/test.cpp" ${GameSources})
+
+target_link_libraries(GameClient PRIVATE SDL3::SDL3)
+target_link_libraries(GameServer PRIVATE SDL3::SDL3) # Server maybe not need?
+target_link_libraries(GameTests PRIVATE SDL3::SDL3)
 
 # Ensure all warnings are caught
 if(MSVC)
