@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 3.19)
+cmake_minimum_required (VERSION 3.24)
 
 if (POLICY CMP0141)
     cmake_policy(SET CMP0141 NEW)
@@ -25,6 +25,7 @@ set(GameSources
 set(SDL3_DIR "vendor/SDL-3.2.20")
 set(IMGUI_DIR "vendor/imgui-1.92.2b-docking")
 set(GLM_DIR "vendor/GLM-1.0.1")
+find_package(Vulkan REQUIRED)
 
 set(ImGuiSources
     ${IMGUI_DIR}/imgui.cpp
@@ -52,6 +53,11 @@ target_link_libraries(GameTests PRIVATE SDL3::SDL3)
 target_link_libraries(GameClient PRIVATE glm::glm)
 target_link_libraries(GameServer PRIVATE glm::glm)
 target_link_libraries(GameTests PRIVATE glm::glm)
+
+target_include_directories(GameClient PRIVATE ${Vulkan_INCLUDE_DIRS})
+target_include_directories(GameTests PRIVATE ${Vulkan_INCLUDE_DIRS})
+target_link_libraries(GameClient PRIVATE Vulkan::Vulkan)
+target_link_libraries(GameTests PRIVATE Vulkan::Vulkan)
 
 # Ensure all warnings are caught
 if(MSVC)
