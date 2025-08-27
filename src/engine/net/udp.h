@@ -8,6 +8,11 @@
 
 #if defined(_WIN32)
 #include <WinSock2.h>
+#elif defined(__clang__)
+#include <sys/socket.h>
+#include <netinet/in.h>
+#elif defined(__GNUC__)
+#include <sys/socket.h>
 #endif
 
 class UdpTransportAddress {
@@ -46,6 +51,8 @@ public:
 
     #if defined(_WIN32)
     operator SOCKET() const;
+    #elif defined(__GNUC__) || defined(__clang__)
+    operator int() const { return this->socket_; }
     #endif
 
     bool readable(long timeoutMicroseconds = 5) const;
@@ -80,7 +87,11 @@ public:
 private:
     UdpSocket() noexcept;
 private:
+    #if defined(_WIN32)
     void* socket_;
+    #elif defined(__GNUC__) || defined(__clang__)
+    int socket_;
+    #endif
     char* maxBuf_;
     std::atomic<bool> receiverInUse_;
 };

@@ -12,6 +12,8 @@
 #include <string>
 #include <thread>
 #include <iostream>
+#include <thread>
+#include <chrono>
 
 int main(int argc, char* argv[]) {
     char a1[] = "a";
@@ -36,6 +38,7 @@ int main(int argc, char* argv[]) {
         if(result.has_value() == false) {
             std::cerr << "Failed to send: " << result.error() << std::endl;
         }
-        Sleep(5000);
+        using namespace std::chrono_literals;
+        std::this_thread::sleep_for(5000ms);
     }
 }

@@ -9,6 +9,9 @@
 
 #pragma comment (lib, "ws2_32.lib")
 #endif
+#include <exception>
+#include <thread>
+#include <chrono>
 
 int main() {
     UdpSocket sock = UdpSocket::create();
@@ -22,7 +25,8 @@ int main() {
     while(true) {
         if(!sock.readable()) {
             std::cout << "no data to read\n";
-            Sleep(1000);
+            using namespace std::chrono_literals;
+            std::this_thread::sleep_for(5000ms);
             continue;
         }
         else {
