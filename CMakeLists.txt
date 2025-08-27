@@ -18,7 +18,8 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/$<CONFIGURATION>")
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/$<CONFIGURATION>")
 
 set(GameSources
-
+    "src/engine/net/udp.cpp"
+    "src/engine/net/winsock2_setup.cpp"
 )
 
 # Dependencies
@@ -61,9 +62,25 @@ target_include_directories(GameTests PRIVATE ${Vulkan_INCLUDE_DIRS})
 target_link_libraries(GameClient PRIVATE Vulkan::Vulkan)
 target_link_libraries(GameTests PRIVATE Vulkan::Vulkan)
 
+# Networking
+if(MSVC)
+    link_libraries(wsock32 ws2_32)
+endif()
+
 # Ensure all warnings are caught
 if(MSVC)
-    add_compile_options(/W4 /WX dbghelp /EHsc /Zi /fsanitize=address)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W4 /WX /EHsc /Zi")
+    add_compile_options(/W4 /WX /EHsc /Zi)
+    if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+        message(STATUS "Using Address Sanitizing")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /fsanitize=address")
+        add_compile_options(/fsanitize=address)
+    endif()
+    # find_package(DbgHelp REQUIRED)
+    # if(DBGHELP_FOUND)
+    #     include_directories(${DBGHELP_INCLUDE_DIR})
+    #     link_libraries(${DBGHELP_LIBRARIES})
+    # endif()
 else()
     add_compile_options(-Wall -Wextra -Wpedantic -Werror -fsanitize=address)
     set(CMAKE_EXE_LINKER_FLAGS "-fsanitize=address")
@@ -88,11 +105,11 @@ if(X86)
     if(HAS_SSE2)
         if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
             message(STATUS "Game SSE2 GNU/Clang")
-            set(CMAKE_CXX_FLAGS "-msse2")
+            set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -msse2")
             add_compile_options(-msse2)
         elseif(CMAKE_C_COMPILER_ID MATCHES "MSVC")
             message(STATUS "Game SSE2 MSVC")
-            set(CMAKE_CXX_FLAGS "/arch:SSE2")
+            set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /arch:SSE2")
             add_compile_options(/arch:SSE2)
             # For some reason __SSE2__ macro doesn't seem to work? Not sure why?
         endif()
@@ -101,11 +118,11 @@ if(X86)
     # AVX2
     if(MSVC)
         message(STATUS "Game AVX2 MSVC")
-        set(CMAKE_CXX_FLAGS "/arch:AVX2")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /arch:AVX2")
         add_compile_options(/arch:AVX2)
     else()
         message(STATUS "Game AVX2 GNU/Clang")
-        set(CMAKE_CXX_FLAGS "-mavx2")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mavx2")
         add_compile_options(-mavx2)
     endif()
 endif()
