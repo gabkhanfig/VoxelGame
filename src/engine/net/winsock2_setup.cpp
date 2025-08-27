@@ -7,6 +7,8 @@
 
 #pragma comment (lib, "ws2_32.lib")
 
+// https://www.youtube.com/watch?v=uIanSvWou1M&list=PLI2Dn-ewQf7aSQ6A3etSPUO6SF9qGdilN
+
 void winsockErrorToStr(char* out, size_t len, const int err) {
     // https://stackoverflow.com/a/46104456
     (void)FormatMessageA (FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,   // flags

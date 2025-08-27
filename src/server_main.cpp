@@ -10,9 +10,6 @@
 #pragma comment (lib, "ws2_32.lib")
 #endif
 
-
-// https://www.youtube.com/watch?v=uIanSvWou1M&list=PLI2Dn-ewQf7aSQ6A3etSPUO6SF9qGdilN
-
 int main() {
     UdpSocket sock = UdpSocket::create();
 
@@ -22,39 +19,28 @@ int main() {
         std::terminate();
     }
 
-    sockaddr_in client;
-    int clientLength = sizeof(client);
-    ZeroMemory(&client, clientLength);
-
-    char buf[1024];
-    (void)buf;
-
     while(true) {
-        ZeroMemory(&buf, sizeof(buf));
-
-        // wait for message
-        int bytesIn = recvfrom(sock, buf, 1024, 0, (sockaddr*)&client, &clientLength);
-        if(bytesIn == SOCKET_ERROR) {
-            std::cerr << "Error receiving from client! " <<  WSAGetLastError() << std::endl;
+        const auto received = sock.receiveFrom();
+        if(received.has_value()) {
+            const UdpSocket::ReceiveBytes& success = received.value();
+            std::cout << "Message recieved from " 
+                << success.addr.ipv4Address() 
+                << ':' 
+                << success.addr.port()
+                << " | " << reinterpret_cast<const char*>(success.bytes) << std::endl;
+            std::cout << "\tas bytes [";
+            for(int i = 0; i < success.len; i++) {
+                std::cout << (int)success.bytes[i];
+                if(i != (success.len - 1)) {
+                    std::cout << ", ";
+                } else {
+                    std::cout << "]";
+                }
+            }
+            std::cout << std::endl;
+        } else {
+            std::cerr << "Error receiving from client: " << received.error() << std::endl;
             continue;
         }
-
-        // display message
-        char clientIp[256];
-        ZeroMemory(&clientIp, sizeof(clientIp));
-
-        inet_ntop(AF_INET, &client.sin_addr, clientIp, sizeof(clientIp));
-
-        std::cout << "Message recieved from " << clientIp << ':' << client.sin_port << " | " << buf << std::endl;
-        std::cout << "\tas bytes [";
-        for(int i = 0; i < bytesIn; i++) {
-            std::cout << (int)buf[i];
-            if(i != (bytesIn - 1)) {
-                std::cout << ", ";
-            } else {
-                std::cout << "]";
-            }
-        }
-        std::cout << std::endl;
     }
 }

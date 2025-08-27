@@ -25,13 +25,13 @@ std::expected<UdpSocket::ReceiveBytes, std::string> UdpSocket::receiveFrom()
     static char MAX_BUF[MAX_IPV4_UDP_SIZE];
 
     sockaddr_in receiveAddr;
-    int receiveLength;
+    int receiveLength = sizeof(receiveAddr);
     ZeroMemory(&receiveAddr, sizeof(receiveAddr));
 
     int bytesIn = recvfrom(
         static_cast<SOCKET>(*this), 
         MAX_BUF, 
-        MAX_IPV4_UDP_SIZE,
+        sizeof(MAX_BUF),
         0,
         reinterpret_cast<sockaddr*>(&receiveAddr),
         &receiveLength
