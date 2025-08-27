@@ -37,8 +37,8 @@ int main(int argc, char* argv[]) {
 
     // write to it
     while(true) {
-        std::string s(argv[1]);
-        int sendOk = sendto(sock, s.c_str(), static_cast<int>(s.size() + 1), 0, (sockaddr*)&server, sizeof(server));
+        char bytes[] = {'a', 'b', 'c', 0, 'e', 'f', 'g'};
+        int sendOk = sendto(sock, bytes, static_cast<int>(sizeof(bytes) + 1), 0, (sockaddr*)&server, sizeof(server));
         if(sendOk == SOCKET_ERROR) {
             std::cerr << "Failed to send! " << WSAGetLastError() << std::endl;
         }

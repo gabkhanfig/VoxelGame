@@ -16,13 +16,9 @@
 int main() {
     UdpSocket sock = UdpSocket::create();
 
-    sockaddr_in serverHint;
-    serverHint.sin_addr.S_un.S_addr = ADDR_ANY; // just use any one?
-    serverHint.sin_family = AF_INET; // ipv4
-    serverHint.sin_port = htons(54000); // convert little to big endian
-
-    if(bind(sock, (sockaddr*)&serverHint, sizeof(serverHint)) == SOCKET_ERROR) {
-        std::cerr << "Can't bind socket! " <<  WSAGetLastError() << std::endl;
+    UdpTransportAddress serverHint(54000);
+    if(const auto result = sock.bind(serverHint); !result.has_value()) {
+        std::cerr << "Failed to bind socket: " << result.error() << std::endl;
         std::terminate();
     }
 
@@ -50,5 +46,15 @@ int main() {
         inet_ntop(AF_INET, &client.sin_addr, clientIp, sizeof(clientIp));
 
         std::cout << "Message recieved from " << clientIp << ':' << client.sin_port << " | " << buf << std::endl;
+        std::cout << "\tas bytes [";
+        for(int i = 0; i < bytesIn; i++) {
+            std::cout << (int)buf[i];
+            if(i != (bytesIn - 1)) {
+                std::cout << ", ";
+            } else {
+                std::cout << "]";
+            }
+        }
+        std::cout << std::endl;
     }
 }

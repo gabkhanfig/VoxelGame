@@ -1,5 +1,6 @@
 #include "udp.h"
 #include <iostream>
+#include <cstring>
 
 #if defined(_WIN32)
 #define WIN32_LEAN_AND_MEAN
@@ -16,6 +17,35 @@ extern void winsockErrorToStr(char* out, size_t len, const int err);
 
 UdpSocket UdpSocket::create() {
     return UdpSocket();
+}
+
+std::expected<UdpSocket::ReceiveBytes, std::string> UdpSocket::receiveFrom()
+{
+    constexpr size_t MAX_IPV4_UDP_SIZE = 65507;
+    static char MAX_BUF[MAX_IPV4_UDP_SIZE];
+
+    sockaddr_in receiveAddr;
+    int receiveLength;
+    ZeroMemory(&receiveAddr, sizeof(receiveAddr));
+
+    int bytesIn = recvfrom(
+        static_cast<SOCKET>(*this), 
+        MAX_BUF, 
+        MAX_IPV4_UDP_SIZE,
+        0,
+        reinterpret_cast<sockaddr*>(&receiveAddr),
+        &receiveLength
+    );
+    if(bytesIn == SOCKET_ERROR) {
+        char buf[256];
+        winsockErrorToStr(buf, sizeof(buf), WSAGetLastError());
+        return std::unexpected(std::string(buf));
+    }
+
+    uint8_t* bytes = new uint8_t[bytesIn];
+    memcpy(bytes, MAX_BUF, bytesIn);
+    ReceiveBytes out{.addr = receiveAddr, .bytes = bytes, .len = bytesIn};
+    return out;
 }
 
 UdpSocket::UdpSocket() noexcept
@@ -63,4 +93,49 @@ UdpSocket::operator SOCKET() const
     return std::bit_cast<SOCKET, void*>(this->socket_);
 }
 
+std::expected<void, std::string> UdpSocket::bind(const UdpTransportAddress &addr)
+{
+    if(::bind(*this, (sockaddr*)&addr.addr_, sizeof(addr.addr_)) == SOCKET_ERROR) {
+        char buf[256];
+        winsockErrorToStr(buf, sizeof(buf), WSAGetLastError());
+        return std::unexpected(std::string(buf));
+    }
+    return {};
+}
+
 #endif // win32
+
+UdpTransportAddress::UdpTransportAddress(const char *ipv4Addr, unsigned short port)
+{
+    this->addr_.sin_family = AF_INET; // ipv4
+    this->addr_.sin_port = htons(port); // convert little to big endian
+    // https://learn.microsoft.com/en-us/windows/win32/api/ws2tcpip/nf-ws2tcpip-inet_pton
+    if(inet_pton(AF_INET, ipv4Addr, &this->addr_.sin_addr) == -1) {
+        try {
+            char buf[256];
+            winsockErrorToStr(buf, sizeof(buf), WSAGetLastError());
+            std::cerr << "Failed to convert ipv4 address: " << ipv4Addr << "] " << buf << std::endl;
+        } catch(...) {}
+        std::terminate();
+    }
+}
+
+UdpTransportAddress::UdpTransportAddress(unsigned short port)
+{
+    this->addr_.sin_addr.S_un.S_addr = ADDR_ANY; // just use any one?
+    this->addr_.sin_family = AF_INET; // ipv4
+    this->addr_.sin_port = htons(port); // convert little to big endian
+}
+
+std::string UdpTransportAddress::ipv4Address() const
+{
+    char clientIp[64];
+    ZeroMemory(&clientIp, sizeof(clientIp));
+    inet_ntop(AF_INET, &this->addr_.sin_addr, clientIp, sizeof(clientIp));
+    return std::string(clientIp);
+}
+
+unsigned short UdpTransportAddress::port() const
+{
+    return this->addr_.sin_port;
+}
