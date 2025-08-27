@@ -53,6 +53,18 @@ public:
         UdpTransportAddress addr;
         uint8_t* bytes;
         int len;
+
+        ReceiveBytes(UdpTransportAddress inAddr, uint8_t* inBytes, int inLen)
+            : addr(inAddr), bytes(inBytes), len(inLen)
+        {}
+
+        ~ReceiveBytes() noexcept;
+
+        ReceiveBytes(ReceiveBytes&& other) noexcept;
+
+        ReceiveBytes(const ReceiveBytes&) noexcept = delete;
+        ReceiveBytes& operator=(const ReceiveBytes&) noexcept = delete;
+        ReceiveBytes& operator=(ReceiveBytes&&) noexcept = delete;
     };
 
     std::expected<ReceiveBytes, std::string> receiveFrom();

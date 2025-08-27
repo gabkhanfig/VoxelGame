@@ -44,7 +44,7 @@ std::expected<UdpSocket::ReceiveBytes, std::string> UdpSocket::receiveFrom()
 
     uint8_t* bytes = new uint8_t[bytesIn];
     memcpy(bytes, MAX_BUF, bytesIn);
-    ReceiveBytes out{.addr = receiveAddr, .bytes = bytes, .len = bytesIn};
+    ReceiveBytes out{UdpTransportAddress(receiveAddr), bytes, bytesIn};
     return out;
 }
 
@@ -138,4 +138,18 @@ std::string UdpTransportAddress::ipv4Address() const
 unsigned short UdpTransportAddress::port() const
 {
     return this->addr_.sin_port;
+}
+
+UdpSocket::ReceiveBytes::~ReceiveBytes() noexcept
+{
+    if(this->bytes == nullptr) return;
+    delete[] this->bytes;
+    this->bytes = nullptr;
+}
+
+UdpSocket::ReceiveBytes::ReceiveBytes(ReceiveBytes &&other) noexcept
+    : addr(other.addr), bytes(other.bytes), len(other.len)
+{
+    other.bytes = nullptr;
+    other.len = 0;
 }
