@@ -35,13 +35,6 @@ int main(int argc, char* argv[]) {
 
     inet_pton(AF_INET, "127.0.0.1", &server.sin_addr);
 
-    // create the socket
-    SOCKET out = socket(AF_INET, SOCK_DGRAM, 0);
-    if(int err = WSAGetLastError(); err != 0) {
-        std::cerr << "socket fail! " << out << std::endl;
-        std::terminate();
-    }
-
     // write to it
     while(true) {
         std::string s(argv[1]);
