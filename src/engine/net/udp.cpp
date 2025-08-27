@@ -1,6 +1,7 @@
 #include "udp.h"
 #include <iostream>
 #include <cstring>
+#include <thread>
 
 #if defined(_WIN32)
 #define WIN32_LEAN_AND_MEAN
@@ -21,8 +22,15 @@ UdpSocket UdpSocket::create() {
 
 std::expected<UdpSocket::ReceiveBytes, std::string> UdpSocket::receiveFrom()
 {
-    constexpr size_t MAX_IPV4_UDP_SIZE = 65507;
-    static char MAX_BUF[MAX_IPV4_UDP_SIZE];
+    auto previous = this->receiverInUse_.exchange(true);
+    if(previous == true) {
+        try {
+            std::cerr << "Socket receiver already in use by another thread. Incorrectly called from thread " 
+                << std::this_thread::get_id()
+                << std::endl;
+        } catch(...) {}
+        std::terminate();
+    }
 
     sockaddr_in receiveAddr;
     int receiveLength = sizeof(receiveAddr);
@@ -30,8 +38,8 @@ std::expected<UdpSocket::ReceiveBytes, std::string> UdpSocket::receiveFrom()
 
     int bytesIn = recvfrom(
         static_cast<SOCKET>(*this), 
-        MAX_BUF, 
-        sizeof(MAX_BUF),
+        this->maxBuf_, 
+        MAX_IPV4_UDP_SIZE,
         0,
         reinterpret_cast<sockaddr*>(&receiveAddr),
         &receiveLength
@@ -43,8 +51,11 @@ std::expected<UdpSocket::ReceiveBytes, std::string> UdpSocket::receiveFrom()
     }
 
     uint8_t* bytes = new uint8_t[bytesIn];
-    memcpy(bytes, MAX_BUF, bytesIn);
+    memcpy(bytes, this->maxBuf_, bytesIn);
     ReceiveBytes out{UdpTransportAddress(receiveAddr), bytes, bytesIn};
+
+    this->receiverInUse_.store(false);
+
     return out;
 }
 
@@ -67,6 +78,7 @@ std::expected<void, std::string> UdpSocket::sendTo(const uint8_t *bytes, uint16_
 }
 
 UdpSocket::UdpSocket() noexcept
+    : receiverInUse_(false)
 {
     SOCKET sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
     if(int err = WSAGetLastError(); err != 0) {
@@ -79,12 +91,14 @@ UdpSocket::UdpSocket() noexcept
     }
 
     this->socket_ = std::bit_cast<void*, SOCKET>(sock);
+    this->maxBuf_ = new char[MAX_IPV4_UDP_SIZE];
 }
 
 UdpSocket::UdpSocket(UdpSocket&& other) noexcept
-    : socket_(other.socket_)
+    : socket_(other.socket_), maxBuf_(other.maxBuf_)
 {
     other.socket_ = nullptr;
+    other.maxBuf_ = nullptr;
 }
 
 UdpSocket::~UdpSocket() noexcept
@@ -101,6 +115,9 @@ UdpSocket::~UdpSocket() noexcept
         } catch(...) {}      
         std::terminate();
     }
+
+    delete[] this->maxBuf_;
+    this->maxBuf_ = nullptr;
 }
 
 static_assert(sizeof(void*) == sizeof(uint64_t));

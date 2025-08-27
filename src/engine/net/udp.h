@@ -4,6 +4,7 @@
 #include <expected>
 #include <vector>
 #include <string>
+#include <atomic>
 
 #if defined(_WIN32)
 #include <WinSock2.h>
@@ -29,6 +30,7 @@ public:
 class UdpSocket {
 public:
     static constexpr size_t MAX_SAFE_PAYLOAD_SIZE = 508;
+    static constexpr size_t MAX_IPV4_UDP_SIZE = 65507;
 
     static UdpSocket create();
 
@@ -75,5 +77,7 @@ private:
     UdpSocket() noexcept;
 private:
     void* socket_;
+    char* maxBuf_;
+    std::atomic<bool> receiverInUse_;
 };
 
