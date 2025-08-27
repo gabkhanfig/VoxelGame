@@ -69,6 +69,8 @@ public:
 
     std::expected<ReceiveBytes, std::string> receiveFrom();
 
+    std::expected<void, std::string> sendTo(const uint8_t* bytes, uint16_t len, const UdpTransportAddress& to);
+
 private:
     UdpSocket() noexcept;
 private:

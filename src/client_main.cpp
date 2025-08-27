@@ -22,27 +22,20 @@ int main(int argc, char* argv[]) {
         argc = 2;
     }
 
-    std::cout << "hi\n";
-
     UdpSocket sock = UdpSocket::create();
-    
-    std::cout << "hello\n";
 
-    // create a hint structure for the server
-    sockaddr_in server;
-    server.sin_family = AF_INET; // ipv4
-    server.sin_port = htons(54000); // convert little to big endian
+    UdpTransportAddress server("127.0.0.1", 54000);
 
-    inet_pton(AF_INET, "127.0.0.1", &server.sin_addr);
-
-    // write to it
     while(true) {
         char bytes[] = {'a', 'b', 'c', 0, 'e', 'f', 'g'};
-        int sendOk = sendto(sock, bytes, static_cast<int>(sizeof(bytes) + 1), 0, (sockaddr*)&server, sizeof(server));
-        if(sendOk == SOCKET_ERROR) {
-            std::cerr << "Failed to send! " << WSAGetLastError() << std::endl;
+        const auto result = sock.sendTo(
+            reinterpret_cast<const uint8_t*>(bytes), 
+            static_cast<uint16_t>(sizeof(bytes) + 1),
+            server
+        );
+        if(result.has_value() == false) {
+            std::cerr << "Failed to send: " << result.error() << std::endl;
         }
-
         Sleep(1000);
     }
 }

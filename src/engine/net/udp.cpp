@@ -48,6 +48,24 @@ std::expected<UdpSocket::ReceiveBytes, std::string> UdpSocket::receiveFrom()
     return out;
 }
 
+std::expected<void, std::string> UdpSocket::sendTo(const uint8_t *bytes, uint16_t len, const UdpTransportAddress &to)
+{
+    const int sendOk = sendto(
+        *this,
+        reinterpret_cast<const char*>(bytes),
+        static_cast<int>(len),
+        0,
+        reinterpret_cast<const sockaddr*>(&to.addr_),
+        sizeof(to.addr_)
+    );
+    if(sendOk == SOCKET_ERROR) {
+        char buf[256];
+        winsockErrorToStr(buf, sizeof(buf), WSAGetLastError());
+        return std::unexpected(std::string(buf));
+    }
+    return {};
+}
+
 UdpSocket::UdpSocket() noexcept
 {
     SOCKET sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
