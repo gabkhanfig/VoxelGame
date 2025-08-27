@@ -48,6 +48,10 @@ public:
     operator SOCKET() const;
     #endif
 
+    bool readable(long timeoutMicroseconds = 5) const;
+
+    bool writeable(long timeoutMicroseconds = 5) const;
+
     std::expected<void, std::string> bind(const UdpTransportAddress& addr);
 
     class ReceiveBytes {

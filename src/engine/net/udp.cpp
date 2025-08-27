@@ -128,6 +128,62 @@ UdpSocket::operator SOCKET() const
     return std::bit_cast<SOCKET, void*>(this->socket_);
 }
 
+bool UdpSocket::readable(long timeoutMicroseconds) const
+{ 
+    timeval tv;
+    tv.tv_usec = timeoutMicroseconds;
+
+    SOCKET sock = *this;
+
+    fd_set rfds;
+    FD_ZERO(&rfds);
+    FD_SET(sock, &rfds);
+
+    const int retval = select(static_cast<int>(sock + 1), &rfds, nullptr, nullptr, &tv);
+    if(retval == SOCKET_ERROR) {
+        try {
+            char buf[256];
+            winsockErrorToStr(buf, sizeof(buf), WSAGetLastError());
+            std::cerr << "Failed to check if socket is readable: " << buf << std::endl;
+        } catch(...) {}      
+        std::terminate();
+    }
+    if(retval == 0) {
+        return false;
+    }
+    else {
+        return true;
+    }
+}
+
+bool UdpSocket::writeable(long timeoutMicroseconds) const
+{
+    timeval tv;
+    tv.tv_usec = timeoutMicroseconds;
+
+    SOCKET sock = *this;
+
+    fd_set wfds;
+    FD_ZERO(&wfds);
+    FD_SET(sock, &wfds);
+
+    const int retval = select(static_cast<int>(sock + 1), nullptr, &wfds, nullptr, &tv);
+    if(retval == SOCKET_ERROR) {
+        try {
+            char buf[256];
+            winsockErrorToStr(buf, sizeof(buf), WSAGetLastError());
+            std::cerr << "Failed to check if socket is writeable: " << buf << std::endl;
+        } catch(...) {}      
+        std::terminate();
+    }
+    if(retval == 0) {
+        return false;
+    }
+    else {
+        return true;
+    }
+}
+
 std::expected<void, std::string> UdpSocket::bind(const UdpTransportAddress &addr)
 {
     if(::bind(*this, (sockaddr*)&addr.addr_, sizeof(addr.addr_)) == SOCKET_ERROR) {

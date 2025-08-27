@@ -20,27 +20,36 @@ int main() {
     }
 
     while(true) {
-        const auto received = sock.receiveFrom();
-        if(received.has_value()) {
-            const UdpSocket::ReceiveBytes& success = received.value();
-            std::cout << "Message recieved from " 
-                << success.addr.ipv4Address() 
-                << ':' 
-                << success.addr.port()
-                << " | " << reinterpret_cast<const char*>(success.bytes) << std::endl;
-            std::cout << "\tas bytes [";
-            for(int i = 0; i < success.len; i++) {
-                std::cout << (int)success.bytes[i];
-                if(i != (success.len - 1)) {
-                    std::cout << ", ";
-                } else {
-                    std::cout << "]";
-                }
-            }
-            std::cout << std::endl;
-        } else {
-            std::cerr << "Error receiving from client: " << received.error() << std::endl;
+        if(!sock.readable()) {
+            std::cout << "no data to read\n";
+            Sleep(1000);
             continue;
         }
+        else {
+            std::cout << "data to read!\n";
+            const auto received = sock.receiveFrom();
+            if(received.has_value()) {
+                const UdpSocket::ReceiveBytes& success = received.value();
+                std::cout << "Message recieved from " 
+                    << success.addr.ipv4Address() 
+                    << ':' 
+                    << success.addr.port()
+                    << " | " << reinterpret_cast<const char*>(success.bytes) << std::endl;
+                std::cout << "\tas bytes [";
+                for(int i = 0; i < success.len; i++) {
+                    std::cout << (int)success.bytes[i];
+                    if(i != (success.len - 1)) {
+                        std::cout << ", ";
+                    } else {
+                        std::cout << "]";
+                    }
+                }
+                std::cout << std::endl;
+            } else {
+                std::cerr << "Error receiving from client: " << received.error() << std::endl;
+                continue;
+            }
+        }
+
     }
 }

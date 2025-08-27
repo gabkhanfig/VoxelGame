@@ -36,6 +36,6 @@ int main(int argc, char* argv[]) {
         if(result.has_value() == false) {
             std::cerr << "Failed to send: " << result.error() << std::endl;
         }
-        Sleep(1000);
+        Sleep(5000);
     }
 }
