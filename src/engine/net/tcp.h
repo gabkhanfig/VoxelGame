@@ -89,6 +89,12 @@ namespace net {
 
             ~AcceptedConnection() noexcept;
 
+            AcceptedConnection(AcceptedConnection&& other);
+
+            AcceptedConnection(const AcceptedConnection& other) = delete;
+            AcceptedConnection& operator=(const AcceptedConnection& other) = delete;
+            AcceptedConnection& operator=(AcceptedConnection&& other) = delete;
+
             /// @brief Reads a packet in the form of bytes from the socket. This is a
             /// blocking operation. Use with `TcpSocket::readable()` to make
             /// non-blocking IO.

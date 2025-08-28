@@ -2,6 +2,7 @@
 #include "engine/net/udp.h"
 #include "engine/net/tcp.h"
 #include "engine/net/transport.h"
+#include "engine/net/_internal.h"
 
 #if defined(_WIN32)
 #define WIN32_LEAN_AND_MEAN
@@ -98,10 +99,9 @@ int main() {
 
         const char* buf = "HTTP/1.0 200 OK\r\n\r\nHello";
         auto writeResult = conn.write(reinterpret_cast<const uint8_t*>(buf), static_cast<uint16_t>(strlen(buf)));
-        if(writeResult.has_value()) {
-            std::cerr << "Failed to accept on socket: " << writeResult.error() << std::endl;
+        if(writeResult.has_value() == false) {
+            std::cerr << "Failed to write to socket: " << writeResult.error() << std::endl;
             std::terminate();
         }
     }
-
 }

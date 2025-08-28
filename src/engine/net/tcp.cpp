@@ -173,6 +173,13 @@ net::TcpSocket::AcceptedConnection::~AcceptedConnection() noexcept
     this->socket_ = 0;
 }
 
+TcpSocket::AcceptedConnection::AcceptedConnection(AcceptedConnection &&other)
+    : socket_(other.socket_), addr_(other.addr_), ownedSocket_(other.ownedSocket_)
+{
+    other.socket_ = 0;
+    other.ownedSocket_ = nullptr;
+}
+
 std::expected<ReceiveBytes, std::string> TcpSocket::AcceptedConnection::read()
 {
     this->ownedSocket_->setReceiverInUse();
