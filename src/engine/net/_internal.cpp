@@ -89,7 +89,7 @@ std::string net::errToStr(std::optional<int> optErr) {
 
     #if defined(_WIN32)
     char buf[256];
-    winsockErrorToStr(buf, sizeof(buf), WSAGetLastError());
+    winsockErrorToStr(buf, sizeof(buf), err);
     return std::string(buf);
     #elif defined(__GNUC__) || defined(__clang__)
     return std::string(strerror(err));

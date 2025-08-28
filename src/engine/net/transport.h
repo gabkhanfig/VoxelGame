@@ -17,6 +17,18 @@ namespace net {
     class TransportAddress {
     public:
 
+        static TransportAddress fromIpv4AndPort(const char* ipv4Addr, unsigned short port) {
+            return TransportAddress(ipv4Addr, port);
+        }
+
+        static TransportAddress fromPortAnyAddress(unsigned short port) {
+            return TransportAddress(port);
+        }
+
+        static TransportAddress fromRaw(sockaddr_in addr) {
+            return TransportAddress(addr);
+        }
+
         TransportAddress(const char* ipv4Addr, unsigned short port);
 
         TransportAddress(unsigned short port);

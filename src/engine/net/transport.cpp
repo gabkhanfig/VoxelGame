@@ -39,7 +39,7 @@ std::string TransportAddress::ipv4Address() const
 
 unsigned short TransportAddress::port() const
 {
-    return this->addr_.sin_port;
+    return ntohs(this->addr_.sin_port);
 }
 
 ReceiveBytes::~ReceiveBytes() noexcept
