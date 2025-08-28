@@ -1,3 +1,5 @@
+#include "_internal.h"
+
 #if defined(_WIN32)
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
@@ -7,9 +9,7 @@
 
 #pragma comment (lib, "ws2_32.lib")
 
-// https://www.youtube.com/watch?v=uIanSvWou1M&list=PLI2Dn-ewQf7aSQ6A3etSPUO6SF9qGdilN
-
-void winsockErrorToStr(char* out, size_t len, const int err) {
+static void winsockErrorToStr(char* out, size_t len, const int err) {
     // https://stackoverflow.com/a/46104456
     (void)FormatMessageA (FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,   // flags
                     NULL,                // lpsource
@@ -19,6 +19,8 @@ void winsockErrorToStr(char* out, size_t len, const int err) {
                     static_cast<DWORD>(len),     // size of msgbuf, bytes
                     NULL);               // va_list of arguments
 }
+
+// https://www.youtube.com/watch?v=uIanSvWou1M&list=PLI2Dn-ewQf7aSQ6A3etSPUO6SF9qGdilN
 
 struct RAIIWinSock {
     RAIIWinSock();
@@ -70,5 +72,26 @@ RAIIWinSock::~RAIIWinSock() noexcept
 }
 
 
+#endif // win32
 
-#endif
+std::string net::errToStr(std::optional<int> optErr) {
+    int err;
+    if(optErr.has_value()) {
+        err = optErr.value();
+    } else {
+        #if defined(_WIN32)
+        err = WSAGetLastError();
+        #elif defined(__GNUC__) || defined(__clang__)
+        err = errno;
+        #endif
+    }
+
+
+    #if defined(_WIN32)
+    char buf[256];
+    winsockErrorToStr(buf, sizeof(buf), WSAGetLastError());
+    return std::string(buf);
+    #elif defined(__GNUC__) || defined(__clang__)
+    return std::string(strerror(err));
+    #endif
+}

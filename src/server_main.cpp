@@ -1,5 +1,6 @@
 #include <iostream>
 #include "engine/net/udp.h"
+#include "engine/net/transport.h"
 
 #if defined(_WIN32)
 #define WIN32_LEAN_AND_MEAN
@@ -13,10 +14,12 @@
 #include <thread>
 #include <chrono>
 
+using namespace net;
+
 int main() {
     UdpSocket sock = UdpSocket::create();
 
-    UdpTransportAddress serverHint(54000);
+    TransportAddress serverHint(54000);
     if(const auto result = sock.bind(serverHint); !result.has_value()) {
         std::cerr << "Failed to bind socket: " << result.error() << std::endl;
         std::terminate();
@@ -33,7 +36,7 @@ int main() {
             std::cout << "data to read!\n";
             const auto received = sock.receiveFrom();
             if(received.has_value()) {
-                const UdpSocket::ReceiveBytes& success = received.value();
+                const ReceiveTransportBytes& success = received.value();
                 std::cout << "Message recieved from " 
                     << success.addr.ipv4Address() 
                     << ':' 

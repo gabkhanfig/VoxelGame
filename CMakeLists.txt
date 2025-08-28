@@ -19,7 +19,9 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/$<CONFIGURATION>")
 
 set(GameSources
     "src/engine/net/udp.cpp"
-    "src/engine/net/winsock2_setup.cpp"
+    "src/engine/net/tcp.cpp"
+    "src/engine/net/transport.cpp"
+    "src/engine/net/_internal.cpp"
 )
 
 # Dependencies
