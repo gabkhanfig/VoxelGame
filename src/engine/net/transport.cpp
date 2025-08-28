@@ -1,5 +1,7 @@
 #include "transport.h"
 #include "_internal.h"
+#include <exception>
+#include <iostream>
 
 using net::TransportAddress;
 using net::ReceiveBytes;

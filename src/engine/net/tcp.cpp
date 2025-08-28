@@ -1,6 +1,8 @@
 #include "tcp.h"
 #include "_internal.h"
 #include <thread>
+#include <iostream>
+#include <exception>
 
 using net::TcpSocket;
 using net::ReceiveBytes;
