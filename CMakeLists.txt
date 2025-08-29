@@ -39,6 +39,18 @@ set(ImGuiSources
     ${IMGUI_DIR}/backends/imgui_impl_vulkan.cpp
 )
 
+# Doctest
+if(CMAKE_BUILD_TYPE STREQUAL "Release")
+    add_compile_definitions(SYNC_LIB_NO_TESTS NO_TESTS)
+else()
+    set(DOCTEST_DIR "vendor/doctest")
+    set(GameSources "${GameSources}" "test/doctest.cpp")
+    add_subdirectory(${DOCTEST_DIR})
+    link_libraries(doctest)
+    include_directories(${DOCTEST_DIR}/doctest)
+    include(${DOCTEST_DIR}/scripts/cmake/doctest.cmake)
+endif()
+
 # Actual Executables
 add_executable(GameClient "src/client_main.cpp" ${GameSources} ${ImGuiSources})
 add_executable(GameServer "src/server_main.cpp" ${GameSources})
@@ -64,6 +76,10 @@ target_include_directories(GameTests PRIVATE ${Vulkan_INCLUDE_DIRS})
 target_link_libraries(GameClient PRIVATE Vulkan::Vulkan)
 target_link_libraries(GameTests PRIVATE Vulkan::Vulkan)
 
+if(NOT CMAKE_BUILD_TYPE STREQUAL "Release")
+    doctest_discover_tests(GameTests)
+endif()
+
 # Networking
 if(MSVC)
     link_libraries(wsock32 ws2_32)
@@ -86,10 +102,6 @@ if(MSVC)
 else()
     add_compile_options(-Wall -Wextra -Wpedantic -Werror -fsanitize=address)
     set(CMAKE_EXE_LINKER_FLAGS "-fsanitize=address")
-endif()
-
-if(CMAKE_BUILD_TYPE STREQUAL "Release")
-    target_compile_definitions(Game PRIVATE SYNC_LIB_NO_TESTS NO_TESTS)
 endif()
 
 # SIMD
@@ -130,4 +142,3 @@ if(X86)
 endif()
 
 enable_testing()
-add_test(GameTests GameTests)

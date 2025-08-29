@@ -6,6 +6,7 @@
 #include <optional>
 
 using net::UdpSocket;
+using net::TransportAddress;
 using net::ReceiveTransportBytes;
 
 UdpSocket UdpSocket::create() {
@@ -194,3 +195,22 @@ std::expected<void, std::string> UdpSocket::bind(const TransportAddress &addr)
     }
     return {};
 }
+
+#ifndef NO_TESTS
+
+#include <doctest.h>
+
+TEST_SUITE("UDP") {
+    TEST_CASE("create socket") {
+        UdpSocket sock = UdpSocket::create();
+    }
+
+    TEST_CASE("bind socket") {
+        UdpSocket sock = UdpSocket::create();
+        TransportAddress serverHint(54000);
+        const auto result = sock.bind(serverHint);
+        REQUIRE(result.has_value());
+    }
+}
+
+#endif

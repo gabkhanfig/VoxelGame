@@ -43,10 +43,6 @@ RAIIWinSock::RAIIWinSock()
         } catch(...) {}
         std::terminate();
     }
-
-    try {
-        std::cout << "Started WinSock " << std::endl;
-    } catch(...) {}
 }
 
 RAIIWinSock::~RAIIWinSock() noexcept
@@ -65,10 +61,6 @@ RAIIWinSock::~RAIIWinSock() noexcept
             std::cerr << "Failed to cleanup WinSock: " << msgbuf << std::endl;
         } catch(...) {}
     }
-
-    try {
-        std::cout << "Cleaned up WinSock " << std::endl;
-    } catch(...) {}
 }
 
 

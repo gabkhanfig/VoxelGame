@@ -7,3 +7,6 @@
 [submodule "vendor/GLM-1.0.1"]
 	path = vendor/GLM-1.0.1
 	url = https://github.com/g-truc/glm.git
+[submodule "vendor/doctest"]
+	path = vendor/doctest
+	url = https://github.com/doctest/doctest.git
