@@ -18,11 +18,12 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/$<CONFIGURATION>")
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/$<CONFIGURATION>")
 
 set(GameSources
-    "vendor/VulkanMemoryAllocator/include/VmaUsage.cpp"
-    "src/engine/net/udp.cpp"
-    "src/engine/net/tcp.cpp"
-    "src/engine/net/transport.cpp"
-    "src/engine/net/_internal.cpp"
+    # "vendor/VulkanMemoryAllocator/include/vma_usage.cpp"
+    # "src/engine/net/udp.cpp"
+    # "src/engine/net/tcp.cpp"
+    # "src/engine/net/transport.cpp"
+    # "src/engine/net/_internal.cpp"
+    # "src/engine/graphics/vulkan/vk_engine.cpp"
 )
 
 # Dependencies
@@ -48,11 +49,20 @@ add_executable(GameServer "src/server_main.cpp" ${GameSources})
 add_executable(GameTests "src/test.cpp" ${GameSources} ${ImGuiSources})
 
 # Include / Link
+target_link_libraries(GameClient PRIVATE Vulkan::Vulkan)
+target_link_libraries(GameTests PRIVATE Vulkan::Vulkan)
+target_include_directories(GameClient PRIVATE ${Vulkan_INCLUDE_DIRS})
+target_include_directories(GameTests PRIVATE ${Vulkan_INCLUDE_DIRS})
+
 set(SDL_TEST_LIBRARY OFF)
 set(SDL_STATIC ON)
 add_subdirectory(${SDL3_DIR})
 add_subdirectory(${GLM_DIR})
-add_subdirectory(${VK_BOOTSTRAP_DIR})
+# add_subdirectory(${VK_BOOTSTRAP_DIR})
+
+message("Vulkan found? " ${VULKAN_FOUND})
+message("Alright, where is it? " ${Vulkan_LIBRARIES})
+message("And I can include it? " ${Vulkan_INCLUDE_DIRS})
 
 target_link_libraries(GameClient PRIVATE glm::glm)
 target_link_libraries(GameServer PRIVATE glm::glm)
@@ -65,18 +75,13 @@ target_link_libraries(GameTests PRIVATE SDL3::SDL3)
 target_include_directories(GameClient PRIVATE ${IMGUI_DIR} ${IMGUI_DIR}/backends)
 target_include_directories(GameTests PRIVATE ${IMGUI_DIR} ${IMGUI_DIR}/backends)
 
-target_include_directories(GameClient PRIVATE ${Vulkan_INCLUDE_DIRS})
-target_include_directories(GameTests PRIVATE ${Vulkan_INCLUDE_DIRS})
-target_link_libraries(GameClient PRIVATE Vulkan::Vulkan)
-target_link_libraries(GameTests PRIVATE Vulkan::Vulkan)
+# target_link_libraries(GameClient PRIVATE vkbootstrap)
+# target_link_libraries(GameTests PRIVATE vkbootstrap)
+# target_include_directories(GameClient PRIVATE ${VK_BOOTSTRAP_DIR}/src)
+# target_include_directories(GameTests PRIVATE ${VK_BOOTSTRAP_DIR}/src)
 
-target_include_directories(GameClient PRIVATE ${VK_BOOTSTRAP_DIR}/src)
-target_include_directories(GameTests PRIVATE ${VK_BOOTSTRAP_DIR}/src)
-target_link_libraries(GameClient PRIVATE vkbootstrap)
-target_link_libraries(GameTests PRIVATE vkbootstrap)
-
-target_include_directories(GameClient PRIVATE ${VMA_DIR}/include)
-target_include_directories(GameTests PRIVATE ${VMA_DIR}/include)
+# target_include_directories(GameClient PRIVATE ${VMA_DIR}/include)
+# target_include_directories(GameTests PRIVATE ${VMA_DIR}/include)
 
 # Doctest
 if(CMAKE_BUILD_TYPE STREQUAL "Release")

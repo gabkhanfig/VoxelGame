@@ -1,22 +1,22 @@
-#include <iostream>
-#include "engine/net/udp.h"
-#include "engine/net/tcp.h"
-#include "engine/net/transport.h"
-#include "engine/net/_internal.h"
+// #include "engine/net/_internal.h"
+// #include "engine/net/tcp.h"
+// #include "engine/net/transport.h"
+// #include "engine/net/udp.h"
+// #include <iostream>
 
-#if defined(_WIN32)
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
-#include <WinSock2.h>
-#include <WS2tcpip.h>
+// #if defined(_WIN32)
+// #define WIN32_LEAN_AND_MEAN
+// #include <WS2tcpip.h>
+// #include <WinSock2.h>
+// #include <windows.h>
 
-#pragma comment (lib, "ws2_32.lib")
-#endif
-#include <exception>
-#include <thread>
-#include <chrono>
+// #pragma comment(lib, "ws2_32.lib")
+// #endif
+// #include <chrono>
+// #include <exception>
+// #include <thread>
 
-using namespace net;
+// using namespace net;
 
 // int main() {
 //     UdpSocket sock = UdpSocket::create();
@@ -39,9 +39,9 @@ using namespace net;
 //             const auto received = sock.receiveFrom();
 //             if(received.has_value()) {
 //                 const ReceiveTransportBytes& success = received.value();
-//                 std::cout << "Message recieved from " 
-//                     << success.addr.ipv4Address() 
-//                     << ':' 
+//                 std::cout << "Message recieved from "
+//                     << success.addr.ipv4Address()
+//                     << ':'
 //                     << success.addr.port()
 //                     << " | " << reinterpret_cast<const char*>(success.bytes) << std::endl;
 //                 std::cout << "\tas bytes [";
@@ -63,45 +63,50 @@ using namespace net;
 //     }
 // }
 
-int main() {
-    TcpSocket sock = TcpSocket::create();
-    TransportAddress listenAddr = TransportAddress::fromPortAnyAddress(54000);
-    auto bindResult = sock.bindAndListen(listenAddr, 10);
-    if(bindResult.has_value() == false) {
-        std::cerr << "Failed to bind and listen tcp socket: " << bindResult.error() << std::endl;
-        std::terminate();
-    }
+// int main() {
+//     TcpSocket sock = TcpSocket::create();
+//     TransportAddress listenAddr = TransportAddress::fromPortAnyAddress(54000);
+//     auto bindResult = sock.bindAndListen(listenAddr, 10);
+//     if(bindResult.has_value() == false) {
+//         std::cerr << "Failed to bind and listen tcp socket: " << bindResult.error() << std::endl;
+//         std::terminate();
+//     }
 
-    while(true) {
-        std::cout << "Listening for connection on port: " << listenAddr.port() << std::endl;
-        auto acceptResult = sock.accept();
-        if(acceptResult.has_value() == false) {
-            std::cerr << "Failed to accept on socket: " << acceptResult.error() << std::endl;
-            std::terminate();
-        }
-        
-        TcpSocket::AcceptedConnection& conn = acceptResult.value();
-        std::cout << "Accepted connection: " << conn.address().ipv4Address() << ':' << conn.address().port() << std::endl;
+//     while(true) {
+//         std::cout << "Listening for connection on port: " << listenAddr.port() << std::endl;
+//         auto acceptResult = sock.accept();
+//         if(acceptResult.has_value() == false) {
+//             std::cerr << "Failed to accept on socket: " << acceptResult.error() << std::endl;
+//             std::terminate();
+//         }
 
-        auto readResult = conn.read();
-        if(readResult.has_value() == false) {
-            std::cerr << "Failed to read: " << readResult.error() << std::endl;
-            std::terminate();
-        }
-        else {
-            auto& bytes = readResult.value();
-            std::cout << "read in:\n";
-            for(int i = 0; i < bytes.len; i++) {
-                std::cout << static_cast<int>(bytes.bytes[i]) << ',';
-            }
-            std::cout << '\n';
-        }
+//         TcpSocket::AcceptedConnection& conn = acceptResult.value();
+//         std::cout << "Accepted connection: " << conn.address().ipv4Address() << ':' << conn.address().port() <<
+//         std::endl;
 
-        const char* buf = "HTTP/1.0 200 OK\r\n\r\nHello";
-        auto writeResult = conn.write(reinterpret_cast<const uint8_t*>(buf), static_cast<uint16_t>(strlen(buf)));
-        if(writeResult.has_value() == false) {
-            std::cerr << "Failed to write to socket: " << writeResult.error() << std::endl;
-            std::terminate();
-        }
-    }
-}
+//         auto readResult = conn.read();
+//         if(readResult.has_value() == false) {
+//             std::cerr << "Failed to read: " << readResult.error() << std::endl;
+//             std::terminate();
+//         }
+//         else {
+//             auto& bytes = readResult.value();
+//             std::cout << "read in:\n";
+//             for(int i = 0; i < bytes.len; i++) {
+//                 std::cout << static_cast<int>(bytes.bytes[i]) << ',';
+//             }
+//             std::cout << '\n';
+//         }
+
+//         const char* buf = "HTTP/1.0 200 OK\r\n\r\nHello";
+//         auto writeResult = conn.write(reinterpret_cast<const uint8_t*>(buf), static_cast<uint16_t>(strlen(buf)));
+//         if(writeResult.has_value() == false) {
+//             std::cerr << "Failed to write to socket: " << writeResult.error() << std::endl;
+//             std::terminate();
+//         }
+//     }
+// }
+
+#include <iostream>
+
+int main() {}
