@@ -4,6 +4,9 @@
     "editor.detectIndentation": false,
     "editor.insertSpaces": true,
     "editor.tabSize": 4,
+    "C_Cpp.formatting": "clangFormat",
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": "xaver.clang-format",
     "files.associations": {
         "algorithm": "cpp",
         "array": "cpp",

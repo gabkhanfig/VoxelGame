@@ -18,6 +18,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/$<CONFIGURATION>")
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/$<CONFIGURATION>")
 
 set(GameSources
+    "vendor/VulkanMemoryAllocator/include/VmaUsage.cpp"
     "src/engine/net/udp.cpp"
     "src/engine/net/tcp.cpp"
     "src/engine/net/transport.cpp"
@@ -28,6 +29,8 @@ set(GameSources
 set(SDL3_DIR "vendor/SDL-3.2.20")
 set(IMGUI_DIR "vendor/imgui-1.92.2b-docking")
 set(GLM_DIR "vendor/GLM-1.0.1")
+set(VK_BOOTSTRAP_DIR "vendor/vk-bootstrap-v1.4.325")
+set(VMA_DIR "vendor/VulkanMemoryAllocator")
 find_package(Vulkan REQUIRED)
 
 set(ImGuiSources
@@ -39,26 +42,17 @@ set(ImGuiSources
     ${IMGUI_DIR}/backends/imgui_impl_vulkan.cpp
 )
 
-# Doctest
-if(CMAKE_BUILD_TYPE STREQUAL "Release")
-    add_compile_definitions(SYNC_LIB_NO_TESTS NO_TESTS)
-else()
-    set(DOCTEST_DIR "vendor/doctest")
-    set(GameSources "${GameSources}" "test/doctest.cpp")
-    add_subdirectory(${DOCTEST_DIR})
-    link_libraries(doctest)
-    include_directories(${DOCTEST_DIR}/doctest)
-    include(${DOCTEST_DIR}/scripts/cmake/doctest.cmake)
-endif()
-
 # Actual Executables
 add_executable(GameClient "src/client_main.cpp" ${GameSources} ${ImGuiSources})
 add_executable(GameServer "src/server_main.cpp" ${GameSources})
 add_executable(GameTests "src/test.cpp" ${GameSources} ${ImGuiSources})
 
 # Include / Link
+set(SDL_TEST_LIBRARY OFF)
+set(SDL_STATIC ON)
 add_subdirectory(${SDL3_DIR})
 add_subdirectory(${GLM_DIR})
+add_subdirectory(${VK_BOOTSTRAP_DIR})
 
 target_link_libraries(GameClient PRIVATE glm::glm)
 target_link_libraries(GameServer PRIVATE glm::glm)
@@ -75,6 +69,26 @@ target_include_directories(GameClient PRIVATE ${Vulkan_INCLUDE_DIRS})
 target_include_directories(GameTests PRIVATE ${Vulkan_INCLUDE_DIRS})
 target_link_libraries(GameClient PRIVATE Vulkan::Vulkan)
 target_link_libraries(GameTests PRIVATE Vulkan::Vulkan)
+
+target_include_directories(GameClient PRIVATE ${VK_BOOTSTRAP_DIR}/src)
+target_include_directories(GameTests PRIVATE ${VK_BOOTSTRAP_DIR}/src)
+target_link_libraries(GameClient PRIVATE vkbootstrap)
+target_link_libraries(GameTests PRIVATE vkbootstrap)
+
+target_include_directories(GameClient PRIVATE ${VMA_DIR}/include)
+target_include_directories(GameTests PRIVATE ${VMA_DIR}/include)
+
+# Doctest
+if(CMAKE_BUILD_TYPE STREQUAL "Release")
+    add_compile_definitions(SYNC_LIB_NO_TESTS NO_TESTS)
+else()
+    set(DOCTEST_DIR "vendor/doctest")
+    set(GameSources "${GameSources}" "test/doctest.cpp")
+    add_subdirectory(${DOCTEST_DIR})
+    link_libraries(doctest)
+    include_directories(${DOCTEST_DIR}/doctest)
+    include(${DOCTEST_DIR}/scripts/cmake/doctest.cmake)
+endif()
 
 if(NOT CMAKE_BUILD_TYPE STREQUAL "Release")
     doctest_discover_tests(GameTests)
