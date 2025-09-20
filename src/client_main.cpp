@@ -74,6 +74,8 @@
 // }
 
 #include <iostream>
+#include <vma_usage.h>
 #include <vulkan/vulkan.h>
+
 
 int main() { std::cout << VK_ACCESS_MEMORY_WRITE_BIT << std::endl; }

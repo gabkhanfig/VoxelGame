@@ -10,6 +10,6 @@
 [submodule "vendor/doctest"]
 	path = vendor/doctest
 	url = https://github.com/doctest/doctest.git
-[submodule "vendor/vk-bootstrap-v1.4.325"]
-	path = vendor/vk-bootstrap-v1.4.325
+[submodule "vendor/vk-bootstrap-v1.4.321"]
+	path = vendor/vk-bootstrap-v1.4.321
 	url = https://github.com/charles-lunarg/vk-bootstrap

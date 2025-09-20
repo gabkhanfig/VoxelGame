@@ -1,8 +1,8 @@
 #pragma once
 
-// #include "vk_enum_string_helper.h"
 // clang-format off
 #include <vulkan/vulkan.h>
+#include <vulkan/vk_enum_string_helper.h>
 #include <vma_usage.h>
 // clang-format on
 

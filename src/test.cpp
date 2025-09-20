@@ -1,8 +1,3 @@
-// #include <doctest.h>
+#include <doctest.h>
 
-// int main(int argc, char** argv)
-// {
-//     return doctest::Context(argc, argv).run();
-// }
-
-int main() {}
+int main(int argc, char** argv) { return doctest::Context(argc, argv).run(); }

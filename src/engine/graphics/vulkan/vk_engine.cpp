@@ -50,17 +50,17 @@ void VulkanEngine::run() {
         // Handle events on queue
         while (SDL_PollEvent(&e) != 0) {
             // close the window when user alt-f4s or clicks the X button
-            if (e.type == SDL_QUIT)
+            if (e.type == static_cast<decltype(e.type)>(SDL_EVENT_QUIT))
                 bQuit = true;
 
-            if (e.type == SDL_WINDOWEVENT) {
-                if (e.window.event == SDL_WINDOWEVENT_MINIMIZED) {
-                    stopRendering_ = true;
-                }
-                if (e.window.event == SDL_WINDOWEVENT_RESTORED) {
-                    stopRendering_ = false;
-                }
-            }
+            // if (e.type == SDL_WINDOWEVENT) {
+            //     if (e.window.event == SDL_WINDOWEVENT_MINIMIZED) {
+            //         stopRendering_ = true;
+            //     }
+            //     if (e.window.event == SDL_WINDOWEVENT_RESTORED) {
+            //         stopRendering_ = false;
+            //     }
+            // }
         }
 
         // do not draw if we are minimized
