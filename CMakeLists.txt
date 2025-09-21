@@ -37,6 +37,7 @@ set(CoreSources
 set(GraphicsSources
     "src/engine/graphics/vulkan/vk_engine.cpp"
     "src/engine/graphics/vulkan/vk_initializers.cpp"
+    "src/engine/graphics/vulkan/vk_images.cpp"
 )
 
 set(ImGuiSources

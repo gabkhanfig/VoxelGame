@@ -1,4 +1,5 @@
 #include "vk_engine.h"
+#include "vk_images.h"
 #include "vk_initializers.h"
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_vulkan.h>
@@ -40,6 +41,11 @@ void VulkanEngine::cleanup() {
         vkDeviceWaitIdle(device_);
         for (unsigned int i = 0; i < FRAME_OVERLAP; i++) {
             vkDestroyCommandPool(device_, frames_[i].commandPool_, nullptr);
+
+            // destroy sync objects
+            vkDestroyFence(device_, frames_[i].renderFence_, nullptr);
+            vkDestroySemaphore(device_, frames_[i].renderSemaphore_, nullptr);
+            vkDestroySemaphore(device_, frames_[i].swapchainSemaphore_, nullptr);
         }
 
         destroySwapchain();
@@ -58,7 +64,63 @@ void VulkanEngine::cleanup() {
 }
 
 void VulkanEngine::draw() {
-    // nothing yet
+    VK_CHECK(vkWaitForFences(device_, 1, &get_current_frame().renderFence_, true, 1000000000));
+    VK_CHECK(vkResetFences(device_, 1, &get_current_frame().renderFence_));
+
+    uint32_t swapchainImageIndex;
+    VK_CHECK(vkAcquireNextImageKHR(device_, swapchain_, 100000000000, get_current_frame().swapchainSemaphore_, nullptr,
+                                   &swapchainImageIndex));
+
+    VkCommandBuffer cmd = get_current_frame().mainCommandBuffer_;
+
+    VK_CHECK(vkResetCommandBuffer(cmd, 0));
+
+    VkCommandBufferBeginInfo cmdBeginInfo =
+        vkinit::command_buffer_begin_info(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+
+    VK_CHECK(vkBeginCommandBuffer(cmd, &cmdBeginInfo));
+
+    vkutil::transition_image(cmd, swapchainImages_[swapchainImageIndex], VK_IMAGE_LAYOUT_UNDEFINED,
+                             VK_IMAGE_LAYOUT_GENERAL);
+
+    VkClearColorValue clearValue;
+    float flash = std::abs(std::sin(static_cast<float>(frameNumber_) / 120.f));
+    clearValue = {{0.0f, 0.0f, flash, 1.0f}};
+
+    VkImageSubresourceRange clearRange = vkinit::image_subresource_range(VK_IMAGE_ASPECT_COLOR_BIT);
+    vkCmdClearColorImage(cmd, swapchainImages_[swapchainImageIndex], VK_IMAGE_LAYOUT_GENERAL, &clearValue, 1,
+                         &clearRange);
+
+    vkutil::transition_image(cmd, swapchainImages_[swapchainImageIndex], VK_IMAGE_LAYOUT_GENERAL,
+                             VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+
+    VK_CHECK(vkEndCommandBuffer(cmd));
+
+    VkCommandBufferSubmitInfo cmdInfo = vkinit::command_buffer_submit_info(cmd);
+
+    VkSemaphoreSubmitInfo waitInfo = vkinit::semaphore_submit_info(VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT_KHR,
+                                                                   get_current_frame().swapchainSemaphore_);
+    VkSemaphoreSubmitInfo signalInfo =
+        vkinit::semaphore_submit_info(VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT, get_current_frame().renderSemaphore_);
+
+    VkSubmitInfo2 submit = vkinit::submit_info(&cmdInfo, &signalInfo, &waitInfo);
+
+    VK_CHECK(vkQueueSubmit2(graphicsQueue_, 1, &submit, get_current_frame().renderFence_));
+
+    VkPresentInfoKHR presentInfo{};
+    presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+    presentInfo.pNext = nullptr;
+    presentInfo.pSwapchains = &swapchain_;
+    presentInfo.swapchainCount = 1;
+
+    presentInfo.pWaitSemaphores = &get_current_frame().renderSemaphore_;
+    presentInfo.waitSemaphoreCount = 1;
+
+    presentInfo.pImageIndices = &swapchainImageIndex;
+
+    VK_CHECK(vkQueuePresentKHR(graphicsQueue_, &presentInfo));
+
+    frameNumber_ += 1;
 }
 
 void VulkanEngine::run() {
@@ -208,4 +270,14 @@ void VulkanEngine::initCommands() {
     }
 }
 
-void VulkanEngine::initSyncStructures() {}
+void VulkanEngine::initSyncStructures() {
+    VkFenceCreateInfo fenceCreateInfo = vkinit::fence_create_info(VK_FENCE_CREATE_SIGNALED_BIT);
+    VkSemaphoreCreateInfo semaphoreCreateInfo = vkinit::semaphore_create_info();
+
+    for (unsigned int i = 0; i < FRAME_OVERLAP; i++) {
+        VK_CHECK(vkCreateFence(device_, &fenceCreateInfo, nullptr, &frames_[i].renderFence_));
+
+        VK_CHECK(vkCreateSemaphore(device_, &semaphoreCreateInfo, nullptr, &frames_[i].swapchainSemaphore_));
+        VK_CHECK(vkCreateSemaphore(device_, &semaphoreCreateInfo, nullptr, &frames_[i].renderSemaphore_));
+    }
+}

@@ -4,11 +4,12 @@
 #include <cstdint>
 #include <vector>
 
-
 struct FrameData {
-
     VkCommandPool commandPool_;
     VkCommandBuffer mainCommandBuffer_;
+    VkSemaphore swapchainSemaphore_;
+    VkSemaphore renderSemaphore_;
+    VkFence renderFence_;
 };
 
 constexpr unsigned int FRAME_OVERLAP = 2;
