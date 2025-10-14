@@ -48,6 +48,8 @@ void VulkanEngine::cleanup() {
             vkDestroySemaphore(device_, frames_[i].swapchainSemaphore_, nullptr);
         }
 
+        mainDeletionQueue_.flush();
+
         destroySwapchain();
 
         vkDestroySurfaceKHR(instance_, surface_, nullptr);
@@ -66,6 +68,8 @@ void VulkanEngine::cleanup() {
 void VulkanEngine::draw() {
     VK_CHECK(vkWaitForFences(device_, 1, &get_current_frame().renderFence_, true, 1000000000));
     VK_CHECK(vkResetFences(device_, 1, &get_current_frame().renderFence_));
+
+    get_current_frame().deletionQueue_.flush();
 
     uint32_t swapchainImageIndex;
     VK_CHECK(vkAcquireNextImageKHR(device_, swapchain_, 100000000000, get_current_frame().swapchainSemaphore_, nullptr,
