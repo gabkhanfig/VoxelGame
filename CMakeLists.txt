@@ -17,6 +17,8 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/$<CONFIGURATION>")
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/$<CONFIGURATION>")
 
+option(WITH_TESTS "Compile Tests" ON)
+
 # Dependencies Imports
 find_package(Vulkan REQUIRED)
 
@@ -38,7 +40,10 @@ set(GraphicsSources
     "src/engine/graphics/vulkan/vk_engine.cpp"
     "src/engine/graphics/vulkan/vk_initializers.cpp"
     "src/engine/graphics/vulkan/vk_images.cpp"
+    "${VMA_DIR}/include/vma_usage.cpp"
 )
+
+message(STATUS ${GraphicsSources})
 
 set(ImGuiSources
     ${IMGUI_DIR}/imgui.cpp
@@ -49,18 +54,12 @@ set(ImGuiSources
     ${IMGUI_DIR}/backends/imgui_impl_vulkan.cpp
 )
 
-set(VMASources
-    ${VMA_DIR}/include/vma_usage.cpp
-)
-
 # set(SDL_TEST_LIBRARY OFF)
 # set(SDL_STATIC ON)
 add_subdirectory(${SDL3_DIR})
 
 # Must be after SDL3 for some reason
-if(CMAKE_BUILD_TYPE STREQUAL "Release")
-    add_compile_definitions(SYNC_LIB_NO_TESTS NO_TESTS)
-else()
+if(WITH_TESTS)
     set(CoreSources "${CoreSources}" "test/doctest.cpp")
     add_subdirectory(${DOCTEST_DIR})
     link_libraries(doctest)
@@ -69,9 +68,9 @@ else()
 endif()
 
 # Actual Executables
-add_executable(GameClient "src/client_main.cpp" ${CoreSources} ${ImGuiSources} ${VMASources} ${GraphicsSources})
+add_executable(GameClient "src/client_main.cpp" ${CoreSources} ${ImGuiSources} ${GraphicsSources})
 add_executable(GameServer "src/server_main.cpp" ${CoreSources})
-add_executable(GameTests "src/test.cpp" ${CoreSources} ${ImGuiSources} ${GraphicsSources})
+add_executable(GameTests "test/main.cpp" ${CoreSources} ${ImGuiSources} ${GraphicsSources})
 
 # Include / Link
 target_link_libraries(GameClient PRIVATE Vulkan::Vulkan)
