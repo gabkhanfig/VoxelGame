@@ -21,6 +21,7 @@ option(WITH_TESTS "Compile Tests" ON)
 
 # Dependencies Imports
 find_package(Vulkan REQUIRED)
+find_program(GLSL_VALIDATOR glslangValidator HINTS /usr/bin /usr/local/bin $ENV{VULKAN_SDK}/Bin/ $ENV{VULKAN_SDK}/Bin32/)
 
 set(DOCTEST_DIR "vendor/doctest")
 set(SDL3_DIR "vendor/SDL-3.2.20")
@@ -40,7 +41,13 @@ set(GraphicsSources
     "src/engine/graphics/vulkan/vk_engine.cpp"
     "src/engine/graphics/vulkan/vk_initializers.cpp"
     "src/engine/graphics/vulkan/vk_images.cpp"
+    "src/engine/graphics/vulkan/vk_descriptors.cpp"
+    "src/engine/graphics/vulkan/vk_pipelines.cpp"
     "${VMA_DIR}/include/vma_usage.cpp"
+)
+
+set(DebugSources
+    "src/engine/debug/imgui_setup.cpp"
 )
 
 message(STATUS ${GraphicsSources})
@@ -68,9 +75,33 @@ if(WITH_TESTS)
 endif()
 
 # Actual Executables
-add_executable(GameClient "src/client_main.cpp" ${CoreSources} ${ImGuiSources} ${GraphicsSources})
+add_executable(GameClient "src/client_main.cpp" ${CoreSources} ${ImGuiSources} ${GraphicsSources} ${DebugSources})
 add_executable(GameServer "src/server_main.cpp" ${CoreSources})
-add_executable(GameTests "test/main.cpp" ${CoreSources} ${ImGuiSources} ${GraphicsSources})
+add_executable(GameTests "test/main.cpp" ${CoreSources} ${ImGuiSources} ${GraphicsSources} ${DebugSources})
+
+# Shaders
+file(GLOB_RECURSE GLSL_SOURCE_FILES
+    "${PROJECT_SOURCE_DIR}/assets/shaders/*.frag"
+    "${PROJECT_SOURCE_DIR}/assets/shaders/*.vert"
+    "${PROJECT_SOURCE_DIR}/assets/shaders/*.comp"
+)
+
+foreach(GLSL ${GLSL_SOURCE_FILES})
+  message(STATUS "BUILDING SHADER")
+  get_filename_component(FILE_NAME ${GLSL} NAME)
+  set(SPIRV "${PROJECT_SOURCE_DIR}/assets/shaders/${FILE_NAME}.spv")
+  message(STATUS ${GLSL})
+  add_custom_command(
+    OUTPUT ${SPIRV}
+    COMMAND ${GLSL_VALIDATOR} -V ${GLSL} -o ${SPIRV}
+    DEPENDS ${GLSL})
+  list(APPEND SPIRV_BINARY_FILES ${SPIRV})
+endforeach(GLSL)
+
+add_custom_target(
+    Shaders 
+    DEPENDS ${SPIRV_BINARY_FILES}
+)
 
 # Include / Link
 target_link_libraries(GameClient PRIVATE Vulkan::Vulkan)
@@ -108,6 +139,9 @@ endif()
 if(MSVC)
     link_libraries(wsock32 ws2_32)
 endif()
+
+# Assets
+add_compile_definitions(ASSET_PATH="${CMAKE_SOURCE_DIR}/assets/")
 
 # Ensure all warnings are caught
 if(MSVC)

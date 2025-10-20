@@ -1,5 +1,6 @@
 #pragma once
 
+#include "vk_descriptors.h"
 #include "vk_types.h"
 #include <cstdint>
 #include <deque>
@@ -62,6 +63,16 @@ class VulkanEngine {
 
     VmaAllocator allocator_;
 
+    AllocatedImage drawImage_;
+    VkExtent2D drawExtent_;
+
+    DescriptorAllocator globalDescriptorAllocator;
+    VkDescriptorSet drawImageDescriptors_;
+    VkDescriptorSetLayout drawImageDescriptorLayout_;
+
+    VkPipeline gradientPipeline_;
+    VkPipelineLayout gradientPipelineLayout_;
+
     FrameData& get_current_frame() { return frames_[frameNumber_ % FRAME_OVERLAP]; };
 
     static VulkanEngine& get();
@@ -86,4 +97,12 @@ class VulkanEngine {
     void initCommands();
 
     void initSyncStructures();
+
+    void initDescriptors();
+
+    void initPipelines();
+
+    void initBackgroundPipelines();
+
+    void drawBackground(VkCommandBuffer cmd);
 };

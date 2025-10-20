@@ -1,0 +1,13 @@
+{
+    "recommendations": [
+        "ms-vscode.cpptools-extension-pack",
+        "ms-vscode.cmake-tools",
+        "vadimcn.vscode-lldb",
+        "gruntfuggly.todo-tree",
+        "davidanson.vscode-markdownlint",
+        "aaron-bond.better-comments",
+        "xaver.clang-format",
+        "circledev.glsl-canvas",
+        "raczzalan.webgl-glsl-editor"
+    ]
+}
