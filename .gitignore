@@ -7,3 +7,5 @@ compile_commands.json
 .vs/
 # Neovim
 out/
+# SPIR-V
+assets/shaders/*.spv
