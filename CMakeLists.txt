@@ -46,10 +46,6 @@ set(GraphicsSources
     "${VMA_DIR}/include/vma_usage.cpp"
 )
 
-set(DebugSources
-    "src/engine/debug/imgui_setup.cpp"
-)
-
 message(STATUS ${GraphicsSources})
 
 set(ImGuiSources
@@ -57,6 +53,7 @@ set(ImGuiSources
     ${IMGUI_DIR}/imgui_draw.cpp
     ${IMGUI_DIR}/imgui_tables.cpp
     ${IMGUI_DIR}/imgui_widgets.cpp
+    ${IMGUI_DIR}/imgui_demo.cpp
     ${IMGUI_DIR}/backends/imgui_impl_sdl3.cpp
     ${IMGUI_DIR}/backends/imgui_impl_vulkan.cpp
 )

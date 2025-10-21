@@ -73,6 +73,10 @@ class VulkanEngine {
     VkPipeline gradientPipeline_;
     VkPipelineLayout gradientPipelineLayout_;
 
+    VkFence immFence_;
+    VkCommandBuffer immCommandBuffer_;
+    VkCommandPool immCommandPool_;
+
     FrameData& get_current_frame() { return frames_[frameNumber_ % FRAME_OVERLAP]; };
 
     static VulkanEngine& get();
@@ -84,6 +88,8 @@ class VulkanEngine {
     void draw();
 
     void run();
+
+    void immediateSubmit(std::function<void(VkCommandBuffer cmd)>&& function);
 
   private:
     void initVulkan();
@@ -104,5 +110,9 @@ class VulkanEngine {
 
     void initBackgroundPipelines();
 
+    void initImgui();
+
     void drawBackground(VkCommandBuffer cmd);
+
+    void draw_imgui(VkCommandBuffer cmd, VkImageView targetImageView);
 };

@@ -6,7 +6,10 @@
 #include <SDL3/SDL_vulkan.h>
 #include <VkBootstrap.h>
 #include <assert.h>
+#include <backends/imgui_impl_sdl3.h>
+#include <backends/imgui_impl_vulkan.h>
 #include <chrono>
+#include <imgui.h>
 #include <iostream>
 #include <thread>
 
@@ -34,6 +37,7 @@ void VulkanEngine::init() {
     initSyncStructures();
     initDescriptors();
     initPipelines();
+    initImgui();
 
     // everything went fine
     isInitialized_ = true;
@@ -105,6 +109,8 @@ void VulkanEngine::draw() {
     vkutil::copy_image_to_image(cmd, drawImage_.image, swapchainImages_[swapchainImageIndex], drawExtent_,
                                 swapchainExtent_);
 
+    draw_imgui(cmd, swapchainImageViews_[swapchainImageIndex]);
+
     vkutil::transition_image(cmd, swapchainImages_[swapchainImageIndex], VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                              VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
 
@@ -161,6 +167,8 @@ void VulkanEngine::run() {
                 std::cout << "Restored\n";
                 stopRendering_ = false;
             }
+
+            ImGui_ImplSDL3_ProcessEvent(&e);
         }
 
         // do not draw if we are minimized
@@ -170,8 +178,39 @@ void VulkanEngine::run() {
             continue;
         }
 
+        ImGui_ImplVulkan_NewFrame();
+        ImGui_ImplSDL3_NewFrame();
+        ImGui::NewFrame();
+
+        ImGui::ShowDemoWindow();
+
+        ImGui::Render();
+
         draw();
     }
+}
+
+void VulkanEngine::immediateSubmit(std::function<void(VkCommandBuffer cmd)>&& function) {
+    VK_CHECK(vkResetFences(device_, 1, &immFence_));
+    VK_CHECK(vkResetCommandBuffer(immCommandBuffer_, 0));
+
+    VkCommandBuffer cmd = immCommandBuffer_;
+
+    VkCommandBufferBeginInfo cmdBeginInfo =
+        vkinit::command_buffer_begin_info(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+
+    VK_CHECK(vkBeginCommandBuffer(cmd, &cmdBeginInfo));
+
+    function(cmd);
+
+    VK_CHECK(vkEndCommandBuffer(cmd));
+
+    VkCommandBufferSubmitInfo cmdinfo = vkinit::command_buffer_submit_info(cmd);
+    VkSubmitInfo2 submit = vkinit::submit_info(&cmdinfo, nullptr, nullptr);
+
+    VK_CHECK(vkQueueSubmit2(graphicsQueue_, 1, &submit, immFence_));
+
+    VK_CHECK(vkWaitForFences(device_, 1, &immFence_, true, 999999999999));
 }
 
 void VulkanEngine::initVulkan() {
@@ -290,25 +329,6 @@ void VulkanEngine::destroySwapchain() {
 }
 
 void VulkanEngine::initCommands() {
-    // VkCommandPoolCreateInfo commandPoolInfo{};
-    // commandPoolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-    // commandPoolInfo.pNext = nullptr;
-    // commandPoolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-    // commandPoolInfo.queueFamilyIndex = graphicsQueueFamily_;
-
-    // for (unsigned int i = 0; i < FRAME_OVERLAP; i++) {
-    //     VK_CHECK(vkCreateCommandPool(device_, &commandPoolInfo, nullptr, &frames_[i].commandPool_));
-
-    //     VkCommandBufferAllocateInfo cmdAllocInfo{};
-    //     cmdAllocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-    //     cmdAllocInfo.pNext = nullptr;
-    //     cmdAllocInfo.commandPool = frames_[i].commandPool_;
-    //     cmdAllocInfo.commandBufferCount = 1;
-    //     cmdAllocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-
-    //     VK_CHECK(vkAllocateCommandBuffers(device_, &cmdAllocInfo, &frames_[i].mainCommandBuffer_));
-    // }
-
     // create a command pool for commands submitted to the graphics queue.
     // we also want the pool to allow for resetting of individual command buffers
     VkCommandPoolCreateInfo commandPoolInfo =
@@ -323,6 +343,16 @@ void VulkanEngine::initCommands() {
 
         VK_CHECK(vkAllocateCommandBuffers(device_, &cmdAllocInfo, &frames_[i].mainCommandBuffer_));
     }
+
+    {
+        VK_CHECK(vkCreateCommandPool(device_, &commandPoolInfo, nullptr, &immCommandPool_));
+
+        VkCommandBufferAllocateInfo cmdAllocInfo = vkinit::command_buffer_allocate_info(immCommandPool_, 1);
+
+        VK_CHECK(vkAllocateCommandBuffers(device_, &cmdAllocInfo, &immCommandBuffer_));
+
+        mainDeletionQueue_.pushFunction([=]() { vkDestroyCommandPool(device_, immCommandPool_, nullptr); });
+    }
 }
 
 void VulkanEngine::initSyncStructures() {
@@ -334,6 +364,11 @@ void VulkanEngine::initSyncStructures() {
 
         VK_CHECK(vkCreateSemaphore(device_, &semaphoreCreateInfo, nullptr, &frames_[i].swapchainSemaphore_));
         VK_CHECK(vkCreateSemaphore(device_, &semaphoreCreateInfo, nullptr, &frames_[i].renderSemaphore_));
+    }
+
+    {
+        VK_CHECK(vkCreateFence(device_, &fenceCreateInfo, nullptr, &immFence_));
+        mainDeletionQueue_.pushFunction([=]() { vkDestroyFence(device_, immFence_, nullptr); });
     }
 }
 
@@ -414,6 +449,59 @@ void VulkanEngine::initBackgroundPipelines() {
     });
 }
 
+void VulkanEngine::initImgui() {
+    VkDescriptorPoolSize pool_sizes[] = {{VK_DESCRIPTOR_TYPE_SAMPLER, 1000},
+                                         {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000},
+                                         {VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1000},
+                                         {VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1000},
+                                         {VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 1000},
+                                         {VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1000},
+                                         {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1000},
+                                         {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1000},
+                                         {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1000},
+                                         {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1000},
+                                         {VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1000}};
+
+    VkDescriptorPoolCreateInfo pool_info = {};
+    pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+    pool_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
+    pool_info.maxSets = 1000;
+    pool_info.poolSizeCount = static_cast<uint32_t>(std::size(pool_sizes));
+    pool_info.pPoolSizes = pool_sizes;
+
+    VkDescriptorPool imguiPool;
+    VK_CHECK(vkCreateDescriptorPool(device_, &pool_info, nullptr, &imguiPool));
+
+    ImGui::CreateContext();
+
+    ImGui_ImplSDL3_InitForVulkan(window_);
+
+    ImGui_ImplVulkan_InitInfo initInfo{};
+    initInfo.Instance = instance_;
+    initInfo.PhysicalDevice = chosenGPU_;
+    initInfo.Device = device_;
+    initInfo.Queue = graphicsQueue_;
+    initInfo.DescriptorPool = imguiPool;
+    initInfo.MinImageCount = 3;
+    initInfo.ImageCount = 3;
+    initInfo.UseDynamicRendering = true;
+
+    initInfo.PipelineRenderingCreateInfo = {.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO};
+    initInfo.PipelineRenderingCreateInfo.colorAttachmentCount = 1;
+    initInfo.PipelineRenderingCreateInfo.pColorAttachmentFormats = &swapchainImageFormat_;
+
+    initInfo.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
+
+    ImGui_ImplVulkan_Init(&initInfo);
+
+    // ImGui_ImplVulkan_CreateFontsTexture(); no longer necessary supposedly
+
+    mainDeletionQueue_.pushFunction([=]() {
+        ImGui_ImplVulkan_Shutdown();
+        vkDestroyDescriptorPool(device_, imguiPool, nullptr);
+    });
+}
+
 void VulkanEngine::drawBackground(VkCommandBuffer cmd) {
     // VkClearColorValue clearValue;
     // float flash = std::abs(std::sin(static_cast<float>(frameNumber_) / 120.f));
@@ -430,4 +518,16 @@ void VulkanEngine::drawBackground(VkCommandBuffer cmd) {
     // 16x16 workgroup
     vkCmdDispatch(cmd, static_cast<uint32_t>(std::ceil(drawExtent_.width / 16.0)),
                   static_cast<uint32_t>(std::ceil(drawExtent_.height / 16.0)), 1);
+}
+
+void VulkanEngine::draw_imgui(VkCommandBuffer cmd, VkImageView targetImageView) {
+    VkRenderingAttachmentInfo colorAttachment =
+        vkinit::attachment_info(targetImageView, nullptr, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+    VkRenderingInfo renderInfo = vkinit::rendering_info(swapchainExtent_, &colorAttachment, nullptr);
+
+    vkCmdBeginRendering(cmd, &renderInfo);
+
+    ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), cmd);
+
+    vkCmdEndRendering(cmd);
 }
