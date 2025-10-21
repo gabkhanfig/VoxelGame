@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <deque>
 #include <functional>
+#include <glm/vec4.hpp>
 #include <vector>
 
 struct DeletionQueue {
@@ -29,6 +30,20 @@ struct FrameData {
     VkSemaphore renderSemaphore_;
     VkFence renderFence_;
     DeletionQueue deletionQueue_;
+};
+
+struct ComputePushConstants {
+    glm::vec4 data1;
+    glm::vec4 data2;
+    glm::vec4 data3;
+    glm::vec4 data4;
+};
+
+struct ComputeEffect {
+    const char* name;
+    VkPipeline pipeline;
+    VkPipelineLayout layout;
+    ComputePushConstants data;
 };
 
 constexpr unsigned int FRAME_OVERLAP = 2;
@@ -76,6 +91,9 @@ class VulkanEngine {
     VkFence immFence_;
     VkCommandBuffer immCommandBuffer_;
     VkCommandPool immCommandPool_;
+
+    std::vector<ComputeEffect> backgroundEffects_;
+    int currentBackgroundEffect_ = 0;
 
     FrameData& get_current_frame() { return frames_[frameNumber_ % FRAME_OVERLAP]; };
 
